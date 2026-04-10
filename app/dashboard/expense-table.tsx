@@ -27,6 +27,7 @@ export default function ExpenseTable({ expenses }: any) {
                   year: "numeric",
                   hour: "2-digit",
                   minute: "2-digit",
+                  hour12: true,
                 })}
               </td>
             </tr>
