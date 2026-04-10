@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
 
 import IncomeForm from "./income-form"
 import AddExpense from "./add-expense"
@@ -17,29 +18,36 @@ export default function Dashboard() {
   const [income, setIncome] = useState<number>(0)
   const [expenses, setExpenses] = useState<any[]>([])
 
+  const router = useRouter()
+
   useEffect(() => {
     const getData = async () => {
-      const { data: userData } = await supabase.auth.getUser()
+      const { data, error } = await supabase.auth.getUser()
 
-      if (!userData.user) {
-        window.location.href = "/login"
+      // ✅ FIX: Proper auth check
+      if (error || !data?.user) {
+        console.log("User not logged in")
+        router.push("/login")
         return
       }
 
-      setUser(userData.user)
+      const currentUser = data.user
+      setUser(currentUser)
 
+      // ✅ FETCH INCOME
       const { data: incomeData } = await supabase
         .from("income")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", currentUser.id)
         .single()
 
       if (incomeData) setIncome(incomeData.monthly_income)
 
+      // ✅ FETCH EXPENSES
       const { data: expenseData } = await supabase
         .from("expenses")
         .select("*")
-        .eq("user_id", userData.user.id)
+        .eq("user_id", currentUser.id)
         .order("created_at", { ascending: false })
 
       if (expenseData) setExpenses(expenseData)
@@ -48,12 +56,22 @@ export default function Dashboard() {
     }
 
     getData()
-  }, [])
+  }, [router])
 
   const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0)
   const remaining = income - totalExpense
 
-  if (loading) return <div>Loading...</div>
+  // ⏳ LOADING SCREEN
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-white">
+        Loading...
+      </div>
+    )
+  }
+
+  // ❌ If no user, don't render
+  if (!user) return null
 
   return (
     <div className="p-6 space-y-6">

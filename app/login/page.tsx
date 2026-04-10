@@ -8,8 +8,8 @@ export default function Login() {
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: '${window.location.origin}/dashboard'
-      }
+        redirectTo: "https://budget-planner-seven-delta.vercel.app/dashboard",
+      },
     })
   }
 
